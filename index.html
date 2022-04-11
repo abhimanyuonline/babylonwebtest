@@ -3,9 +3,9 @@
 
 <head>
 
-   
+
     <meta charset="utf-8">
-    
+
     <title>Babylon Template</title>
 
     <style>
@@ -29,16 +29,16 @@
     <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
     <script src="https://code.jquery.com/pep/0.4.3/pep.js"></script>
 
-   
+
 
 </head>
 
 <body>
-   
+
     <canvas id="renderCanvas" touch-action="none"></canvas> <!-- touch-action="none" for best results from PEP -->
 
     <script>
-        
+
         var canvas = document.getElementById("renderCanvas");
 
         var startRenderLoop = function (engine, canvas) {
@@ -53,8 +53,9 @@
         var scene = null;
         var sceneToRender = null;
         var createDefaultEngine = function () { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false }); };
-     //   var HOST_ENDPOINT = "wss://tutorial-babylonjs-server.glitch.me";
-        var HOST_ENDPOINT = "ws://localhost:2567";
+        var HOST_ENDPOINT = "wss://tutorial-babylonjs-server.glitch.me";
+        //   var HOST_ENDPOINT = "ws://localhost:2567";
+        //   var HOST_ENDPOINT = "ws://localhost:2567";
         var ROOM_NAME = "my_room";
 
         // Load Colyseus SDK (asynchronously)
@@ -73,9 +74,9 @@
             var light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
             light.intensity = 0.7;
 
-            // var ground = BABYLON.MeshBuilder.CreatePlane("ground", { size: 500 }, scene);
-            // ground.position.y = -15;
-            // ground.rotation.x = Math.PI / 2;
+            var ground = BABYLON.MeshBuilder.CreatePlane("ground", { size: 500 }, scene);
+            ground.position.y = -15;
+            ground.rotation.x = Math.PI / 2;
 
             // const box = BABYLON.MeshBuilder.CreateBox("box", {height: 1, width: 0.75, depth: 0.25},scene);
             // box.position.y = 1;
@@ -91,7 +92,7 @@
 
         var buildScene = async function (scene) {
             var colyseusSDK = new Colyseus.Client(HOST_ENDPOINT);
-           
+
 
             //
             // Connect with Colyseus server
@@ -114,12 +115,19 @@
 
                 // set player's color
                 box.material = new BABYLON.StandardMaterial(`player-material-${sessionId}`);
-             //   sphere.material.emissiveColor = (isCurrentPlayer) ? BABYLON.Color3.FromHexString("#ff9900") : BABYLON.Color3.Gray();
+                box.material.emissiveColor = (isCurrentPlayer) ? BABYLON.Color3.FromHexString("#ff9900") : BABYLON.Color3.Gray();
 
                 // set player spawning position
                 box.position.set(player.x, player.y, player.z);
+                playerNextPosition[sessionId] = box.position.clone();
 
+                player.onChange(function () {
+                    playerNextPosition[sessionId].set(player.x, player.y, player.z);
+                });
                 playerEntities[sessionId] = box;
+                player.onChange(function () {
+                    playerEntities[sessionId].position.set(player.x, player.y, player.z);
+                });
             });
 
             // 
@@ -130,10 +138,37 @@
                 delete playerEntities[sessionId];
                 delete playerNextPosition[sessionId];
             });
+            scene.onPointerDown = function (event, pointer) {
+                if (event.button == 0) {
+                    const targetPosition = pointer.pickedPoint.clone();
+
+                    // Position adjustments for the current play ground.
+                    // Prevent spheres from moving all around the screen other than on the ground mesh.
+                    targetPosition.y = -1;
+                    if (targetPosition.x > 245) targetPosition.x = 245;
+                    else if (targetPosition.x < -245) targetPosition.x = -245;
+                    if (targetPosition.z > 245) targetPosition.z = 245;
+                    else if (targetPosition.z < -245) targetPosition.z = -245;
+
+                    // Send position update to the server
+                    room.send("updatePosition", {
+                        x: targetPosition.x,
+                        y: targetPosition.y,
+                        z: targetPosition.z,
+                    });
+                }
+                // scene.registerBeforeRender(() => {
+                //     for (let sessionId in playerEntities) {
+                //         var entity = playerEntities[sessionId];
+                //         var targetPosition = playerNextPosition[sessionId];
+                //         entity.position = BABYLON.Vector3.Lerp(entity.position, targetPosition, 0.5);
+                //     }
+                // });
+            };
 
             // on room disconnection
             room.onLeave(code => {
-              
+
             });
         };
 

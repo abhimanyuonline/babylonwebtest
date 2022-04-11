@@ -5,7 +5,13 @@ export class MyRoom extends Room<MyRoomState> {
 
   onCreate (options: any) {
     this.setState(new MyRoomState());
-
+    
+    this.onMessage("updatePosition", (client, data) => {
+      const player = this.state.players.get(client.sessionId);
+      player.x = data.x;
+      player.y = data.y;
+      player.z = data.z;
+    });
     this.onMessage("type", (client, message) => {
       //
       // handle "type" message
