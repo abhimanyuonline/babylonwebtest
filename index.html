@@ -54,8 +54,7 @@
         var sceneToRender = null;
         var createDefaultEngine = function () { return new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false }); };
         var HOST_ENDPOINT = "wss://tutorial-babylonjs-server.glitch.me";
-        //   var HOST_ENDPOINT = "ws://localhost:2567";
-        //   var HOST_ENDPOINT = "ws://localhost:2567";
+      //     var HOST_ENDPOINT = "ws://localhost:2567";
         var ROOM_NAME = "my_room";
 
         // Load Colyseus SDK (asynchronously)
@@ -157,13 +156,13 @@
                         z: targetPosition.z,
                     });
                 }
-                // scene.registerBeforeRender(() => {
-                //     for (let sessionId in playerEntities) {
-                //         var entity = playerEntities[sessionId];
-                //         var targetPosition = playerNextPosition[sessionId];
-                //         entity.position = BABYLON.Vector3.Lerp(entity.position, targetPosition, 0.5);
-                //     }
-                // });
+                scene.registerBeforeRender(() => {
+                    for (let sessionId in playerEntities) {
+                        var entity = playerEntities[sessionId];
+                        var targetPosition = playerNextPosition[sessionId];
+                        entity.position = BABYLON.Vector3.Lerp(entity.position, targetPosition, 0.5);
+                    }
+                });
             };
 
             // on room disconnection
